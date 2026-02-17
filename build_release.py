@@ -3,7 +3,13 @@
 
 The repo keeps XML examples in subfolders (references/CPM/, references/PDE/, etc.)
 for easy editing. This script flattens them into per-category markdown files for
-the release ZIP, since Claude Desktop skills don't support nested subdirectories.
+the release ZIP, since Claude Desktop expects a flat structure.
+
+Binary assets (TIF images) are excluded from the ZIP -- they are only needed by
+Morpheus at runtime and are not useful to Claude.
+
+The .txt reference files are renamed to .md in the release for consistency with
+the Agent Skills ecosystem.
 
 Repo structure (editable):
     morpheus/
@@ -17,22 +23,20 @@ Repo structure (editable):
     │   ├── model_template.txt
     │   └── morpheusml_doc.txt
     └── assets/
-        └── *.tif
+        └── *.tif  (runtime only, not included in ZIP)
 
-Release ZIP (flat):
+Release ZIP (flat, text-only):
     morpheus/
     ├── SKILL.md
     ├── LICENSE.txt
-    ├── references/
-    │   ├── cpm-examples.md
-    │   ├── pde-examples.md
-    │   ├── ode-examples.md
-    │   ├── multiscale-examples.md
-    │   ├── miscellaneous-examples.md
-    │   ├── model_template.txt
-    │   └── morpheusml_doc.txt
-    └── assets/
-        └── *.tif
+    └── references/
+        ├── model-template.md
+        ├── morpheusml-doc.md
+        ├── cpm-examples.md
+        ├── pde-examples.md
+        ├── ode-examples.md
+        ├── multiscale-examples.md
+        └── miscellaneous-examples.md
 
 Usage:
     python build_release.py
@@ -50,6 +54,12 @@ CATEGORIES = {
     "ODE": "Ordinary Differential Equation (ODE) Examples",
     "Multiscale": "Multiscale Model Examples",
     "Miscellaneous": "Miscellaneous Examples",
+}
+
+# Repo .txt files renamed to .md (kebab-case) in the release
+TXT_TO_MD = {
+    "model_template.txt": "model-template.md",
+    "morpheusml_doc.txt": "morpheusml-doc.md",
 }
 
 
@@ -97,11 +107,12 @@ def build():
             "morpheus/LICENSE.txt",
         )
 
-        # 2. Add flat reference files (template + docs)
-        for fname in ("model_template.txt", "morpheusml_doc.txt"):
-            src = os.path.join(SKILL_DIR, "references", fname)
+        # 2. Add flat reference files (template + docs), renamed to .md
+        for txt_name, md_name in TXT_TO_MD.items():
+            src = os.path.join(SKILL_DIR, "references", txt_name)
             if os.path.isfile(src):
-                zf.write(src, f"morpheus/references/{fname}")
+                zf.write(src, f"morpheus/references/{md_name}")
+                print(f"  morpheus/references/{md_name} (from {txt_name})")
 
         # 3. Merge each XML category into a markdown file
         for category, title in CATEGORIES.items():
@@ -112,13 +123,8 @@ def build():
                 xml_count = md_content.count("\n## ")
                 print(f"  {arcname}: {xml_count} models merged")
 
-        # 4. Add assets (TIFs, etc.) — flat, no subdirectories
-        assets_dir = os.path.join(SKILL_DIR, "assets")
-        if os.path.isdir(assets_dir):
-            for fname in sorted(os.listdir(assets_dir)):
-                src = os.path.join(assets_dir, fname)
-                if os.path.isfile(src):
-                    zf.write(src, f"morpheus/assets/{fname}")
+        # NOTE: Binary assets (TIFs) are intentionally excluded from the ZIP.
+        # They are only needed by Morpheus at runtime, not by Claude.
 
     # Report
     with zipfile.ZipFile(OUTPUT, "r") as zf:
@@ -127,6 +133,10 @@ def build():
         size_kb = sum(i.compress_size for i in zf.infolist()) // 1024
 
     print(f"\nCreated {OUTPUT} ({count} files, {size_kb} KB)")
+    print("Contents:")
+    with zipfile.ZipFile(OUTPUT, "r") as zf:
+        for info in zf.infolist():
+            print(f"  {info.file_size:>8} bytes  {info.filename}")
 
 
 if __name__ == "__main__":

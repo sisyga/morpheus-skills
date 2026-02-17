@@ -45,24 +45,23 @@ Or ask naturally — Claude will invoke it when relevant (e.g., "Create a cell s
 
 ## What's in the ZIP
 
-The release ZIP is flat (no nested subdirectories) for Claude Desktop compatibility.
+The release ZIP is flat (no nested subdirectories, text files only) for Claude Desktop compatibility.
 XML examples are merged into per-category markdown files during the build.
+Binary assets (TIF images) are excluded since they are only needed by Morpheus at runtime.
 
 ```
 morpheus.zip
 └── morpheus/
-    ├── SKILL.md                    # Main skill instructions
-    ├── LICENSE.txt                 # Apache-2.0
-    ├── references/
-    │   ├── model_template.txt      # Minimal valid MorpheusML skeleton
-    │   ├── morpheusml_doc.txt      # Complete MorpheusML tag reference
-    │   ├── cpm-examples.md         # 15 CPM examples (merged from CPM/*.xml)
-    │   ├── pde-examples.md         # 5 reaction-diffusion examples
-    │   ├── ode-examples.md         # 7 ODE/signaling examples
-    │   ├── multiscale-examples.md  # 12 combined CPM+PDE+ODE models
-    │   └── miscellaneous-examples.md  # 5 cellular automata, morphogen gradient
-    └── assets/
-        └── *.tif                   # Image assets used by some models
+    ├── SKILL.md                       # Main skill instructions
+    ├── LICENSE.txt                    # Apache-2.0
+    └── references/
+        ├── model-template.md          # Minimal valid MorpheusML skeleton
+        ├── morpheusml-doc.md          # Complete MorpheusML tag reference
+        ├── cpm-examples.md            # 15 CPM examples (merged from CPM/*.xml)
+        ├── pde-examples.md            # 5 reaction-diffusion examples
+        ├── ode-examples.md            # 7 ODE/signaling examples
+        ├── multiscale-examples.md     # 12 combined CPM+PDE+ODE models
+        └── miscellaneous-examples.md  # 5 cellular automata, morphogen gradient
 ```
 
 ## Prerequisites
@@ -110,8 +109,9 @@ To build `morpheus.zip` from source:
 python build_release.py
 ```
 
-This merges all XML examples into per-category markdown files and produces a
-flat ZIP suitable for Claude Desktop upload.
+This merges all XML examples into per-category markdown files, renames .txt
+references to .md, excludes binary assets, and produces a flat ZIP suitable
+for Claude Desktop upload.
 
 ## About Morpheus
 
