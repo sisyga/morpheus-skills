@@ -5,9 +5,6 @@ The repo keeps XML examples in subfolders (references/CPM/, references/PDE/, etc
 for easy editing. This script flattens them into per-category markdown files for
 the release ZIP, since Claude Desktop expects a flat structure.
 
-Binary assets (TIF images) are excluded from the ZIP -- they are only needed by
-Morpheus at runtime and are not useful to Claude.
-
 The .txt reference files are renamed to .md in the release for consistency with
 the Agent Skills ecosystem.
 
@@ -23,9 +20,9 @@ Repo structure (editable):
     │   ├── model_template.txt
     │   └── morpheusml_doc.txt
     └── assets/
-        └── *.tif  (runtime only, not included in ZIP)
+        └── *.tif
 
-Release ZIP (flat, text-only):
+Release ZIP (flat):
     morpheus/
     ├── SKILL.md
     ├── LICENSE.txt
@@ -37,6 +34,8 @@ Release ZIP (flat, text-only):
         ├── ode-examples.md
         ├── multiscale-examples.md
         └── miscellaneous-examples.md
+    └── assets/
+        └── *.tif
 
 Usage:
     python build_release.py
@@ -123,8 +122,14 @@ def build():
                 xml_count = md_content.count("\n## ")
                 print(f"  {arcname}: {xml_count} models merged")
 
-        # NOTE: Binary assets (TIFs) are intentionally excluded from the ZIP.
-        # They are only needed by Morpheus at runtime, not by Claude.
+        # 4. Add assets (TIFs, etc.) -- flat, no subdirectories
+        assets_dir = os.path.join(SKILL_DIR, "assets")
+        if os.path.isdir(assets_dir):
+            for fname in sorted(os.listdir(assets_dir)):
+                src = os.path.join(assets_dir, fname)
+                if os.path.isfile(src):
+                    zf.write(src, f"morpheus/assets/{fname}")
+                    print(f"  morpheus/assets/{fname}")
 
     # Report
     with zipfile.ZipFile(OUTPUT, "r") as zf:
