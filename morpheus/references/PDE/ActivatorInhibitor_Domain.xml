@@ -31,7 +31,7 @@
             <Size value="100, 100, 0" symbol="size"/>
             <NodeLength value="1"/>
             <Domain boundary-type="constant">
-                <Image path=":/examples/PDE/domain.tif"/>
+                <Image path="assets/activator-inhibitor-domain.tif"/>
             </Domain>
             <Neighborhood>
                 <Order>1</Order>

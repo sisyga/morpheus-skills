@@ -45,19 +45,24 @@ Or ask naturally — Claude will invoke it when relevant (e.g., "Create a cell s
 
 ## What's in the ZIP
 
+The release ZIP is flat (no nested subdirectories) for Claude Desktop compatibility.
+XML examples are merged into per-category markdown files during the build.
+
 ```
 morpheus.zip
 └── morpheus/
     ├── SKILL.md                    # Main skill instructions
     ├── LICENSE.txt                 # Apache-2.0
-    └── references/
-        ├── model_template.txt      # Minimal valid MorpheusML skeleton
-        ├── morpheusml_doc.txt      # Complete MorpheusML tag reference
-        ├── CPM/                    # 15 Cellular Potts Model examples
-        ├── PDE/                    # 5 reaction-diffusion examples
-        ├── ODE/                    # 7 ODE/signaling examples
-        ├── Multiscale/             # 12 combined CPM+PDE+ODE models
-        └── Miscellaneous/          # 5 cellular automata, morphogen gradient, etc.
+    ├── references/
+    │   ├── model_template.txt      # Minimal valid MorpheusML skeleton
+    │   ├── morpheusml_doc.txt      # Complete MorpheusML tag reference
+    │   ├── cpm-examples.md         # 15 CPM examples (merged from CPM/*.xml)
+    │   ├── pde-examples.md         # 5 reaction-diffusion examples
+    │   ├── ode-examples.md         # 7 ODE/signaling examples
+    │   ├── multiscale-examples.md  # 12 combined CPM+PDE+ODE models
+    │   └── miscellaneous-examples.md  # 5 cellular automata, morphogen gradient
+    └── assets/
+        └── *.tif                   # Image assets used by some models
 ```
 
 ## Prerequisites
@@ -75,6 +80,27 @@ Ask Claude things like:
 - "My simulation crashed with 'Symbol not found' — help me fix it"
 - "Analyze these simulation output images"
 
+## Repo structure
+
+The repo keeps XML examples in subfolders for easy editing. The build script
+flattens them into per-category markdown files for the release ZIP.
+
+```
+morpheus/
+├── SKILL.md
+├── LICENSE.txt
+├── references/
+│   ├── CPM/*.xml               # 15 Cellular Potts Model examples
+│   ├── PDE/*.xml               # 5 reaction-diffusion examples
+│   ├── ODE/*.xml               # 7 ODE/signaling examples
+│   ├── Multiscale/*.xml        # 12 combined multiscale models
+│   ├── Miscellaneous/*.xml     # 5 cellular automata, morphogen gradient
+│   ├── model_template.txt      # Minimal valid MorpheusML skeleton
+│   └── morpheusml_doc.txt      # Complete MorpheusML tag reference
+└── assets/
+    └── *.tif                   # Image assets referenced by some models
+```
+
 ## Building a release ZIP
 
 To build `morpheus.zip` from source:
@@ -84,7 +110,8 @@ To build `morpheus.zip` from source:
 python build_release.py
 ```
 
-This creates `morpheus.zip` with the correct structure for Claude Desktop upload.
+This merges all XML examples into per-category markdown files and produces a
+flat ZIP suitable for Claude Desktop upload.
 
 ## About Morpheus
 

@@ -33,7 +33,7 @@ Shows the following features of Morpheus:
                 <Order>2</Order>
             </Neighborhood>
             <Domain boundary-type="noflux">
-                <Image path="crypt.tif"/>
+                <Image path="assets/crypt-tissue-layout.tif"/>
             </Domain>
         </Lattice>
         <SpaceSymbol symbol="l"/>

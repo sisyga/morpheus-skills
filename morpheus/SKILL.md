@@ -30,17 +30,17 @@ Morpheus is an open-source modeling and simulation environment for multicellular
 
 ## Reference Files
 
-This skill bundles complete MorpheusML documentation and 43 example models:
+This skill bundles the complete MorpheusML documentation and 43 example models across 7 files:
 
 | Need | Read |
 |------|------|
 | Start a new model | [references/model_template.txt](references/model_template.txt) |
 | Look up any tag/attribute | [references/morpheusml_doc.txt](references/morpheusml_doc.txt) |
-| Cell sorting, migration, proliferation | `references/CPM/CellSorting_2D.xml`, `Proliferation_2D.xml` |
-| Reaction-diffusion, Turing patterns | `references/PDE/TuringPatterns.xml`, `ActivatorInhibitor_2D.xml` |
-| Signaling, cell cycle ODEs | `references/ODE/DeltaNotch.xml`, `CellCycle.xml` |
-| Combined multiscale model | `references/Multiscale/MultiscaleModel.xml` |
-| Game of Life, morphogen gradient | `references/Miscellaneous/GameOfLife.xml`, `FrenchFlag.xml` |
+| Cell sorting, migration, proliferation | [references/cpm-examples.md](references/cpm-examples.md) |
+| Reaction-diffusion, Turing patterns | [references/pde-examples.md](references/pde-examples.md) |
+| Signaling, cell cycle ODEs | [references/ode-examples.md](references/ode-examples.md) |
+| Combined multiscale models | [references/multiscale-examples.md](references/multiscale-examples.md) |
+| Game of Life, morphogen gradient | [references/miscellaneous-examples.md](references/miscellaneous-examples.md) |
 
 ---
 
@@ -49,9 +49,9 @@ This skill bundles complete MorpheusML documentation and 43 example models:
 ## Workflow
 
 1. **Identify model type** — CPM, PDE, ODE, or Multiscale (see guide below)
-2. **Read 1–2 reference examples** from `references/<category>/`
-3. **Read [references/model_template.txt](references/model_template.txt)** as skeleton
-4. **Adapt minimally** — change only what's needed
+2. **Read the matching reference file** (e.g., `references/cpm-examples.md`) and pick a model to base yours on
+3. **Read [references/model_template.txt](references/model_template.txt)** as a minimal skeleton
+4. **Adapt minimally** — change only what's needed; keep the reference structure intact
 5. **Validate** against the checklist below
 
 ## Mandatory XML Structure
@@ -102,7 +102,7 @@ This skill bundles complete MorpheusML documentation and 43 example models:
 ### CPM (Cellular Potts Model)
 **Use for:** cell sorting, migration, proliferation, adhesion, cell shape.
 **Requires:** `<CellTypes>`, `<CPM>`, `<CellPopulations>`.
-**References:** `references/CPM/CellSorting_2D.xml`, `Proliferation_2D.xml`, `Persistence_2D.xml`, `RunAndTumble.xml`, `Protrusion_2D.xml`, `Crypt.xml`, `PigmentCells.xml`.
+**References:** See [references/cpm-examples.md](references/cpm-examples.md) — CellSorting_2D, Proliferation_2D, Persistence_2D, RunAndTumble, Protrusion_2D, Crypt, PigmentCells.
 
 CPM essentials:
 ```xml
@@ -137,7 +137,7 @@ CPM essentials:
 ### PDE (Partial Differential Equations)
 **Use for:** reaction-diffusion, Turing patterns, morphogen gradients, wave propagation.
 **Requires:** `<Global>` with `<Field>`, `<Diffusion>`, `<System>` with `<DiffEqn>`.
-**References:** `references/PDE/TuringPatterns.xml`, `ActivatorInhibitor_2D.xml`, `ExcitableMedium_3D.xml`.
+**References:** See [references/pde-examples.md](references/pde-examples.md) — TuringPatterns, ActivatorInhibitor_2D, ExcitableMedium_3D.
 
 PDE essentials:
 ```xml
@@ -162,14 +162,14 @@ PDE essentials:
 ### ODE (Ordinary Differential Equations)
 **Use for:** signaling networks, cell cycle, gene regulation, population dynamics.
 **Requires:** `<System>` with `<DiffEqn>` (inside `<Global>` or `<CellType>`).
-**References:** `references/ODE/DeltaNotch.xml`, `CellCycle.xml`, `PredatorPrey.xml`, `MAPK_SBML.xml`, `LateralSignaling.xml`.
+**References:** See [references/ode-examples.md](references/ode-examples.md) — DeltaNotch, CellCycle, PredatorPrey, MAPK_SBML, LateralSignaling.
 
 ### Multiscale (CPM + PDE + ODE)
 **Use for:** chemotaxis with signaling, cell cycle with fields, tissue patterning.
-**References:** `references/Multiscale/MultiscaleModel.xml`, `AutocrineChemotaxis.xml`, `CellCycle.xml`, `Dictyostelium.xml`, `VascularPatterning.xml`, `CellPolarity.xml`.
+**References:** See [references/multiscale-examples.md](references/multiscale-examples.md) — MultiscaleModel, AutocrineChemotaxis, CellCycle, Dictyostelium, VascularPatterning, CellPolarity.
 
 ### Miscellaneous
-**References:** `references/Miscellaneous/GameOfLife.xml`, `FrenchFlag.xml`, `ParticleAggregation.xml`.
+**References:** See [references/miscellaneous-examples.md](references/miscellaneous-examples.md) — GameOfLife, FrenchFlag, ParticleAggregation.
 
 ## Gnuplotter Plot Content
 
