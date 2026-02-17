@@ -14,25 +14,26 @@ It bundles 43 reference XML models and the complete MorpheusML tag documentation
 
 ## Install in Claude Desktop
 
-1. **Download** this repository as a ZIP (green "Code" button → "Download ZIP")
-2. **Extract** the ZIP file
+1. Go to the [Releases](https://github.com/sisyga/morpheus-skills/releases/latest) page
+2. Download **`morpheus.zip`**
 3. Open **Claude Desktop** → **Settings** → **Capabilities**
 4. Ensure **Code execution and file creation** is enabled
-5. Click **Upload skill**
-6. Select the `morpheus` folder from the extracted ZIP
+5. Click **Upload skill** and select the downloaded `morpheus.zip`
 
 That's it — Claude will automatically use the skill when you ask about Morpheus models.
 
 ## Install in Claude Code (CLI)
 
-Copy the `morpheus` folder into your personal skills directory:
+Download the latest release and extract to your personal skills directory:
 
 ```bash
 # macOS / Linux
-cp -r morpheus ~/.claude/skills/
+curl -L https://github.com/sisyga/morpheus-skills/releases/latest/download/morpheus.zip -o /tmp/morpheus.zip
+unzip -o /tmp/morpheus.zip -d ~/.claude/skills/
 
 # Windows (PowerShell)
-Copy-Item -Recurse morpheus $env:USERPROFILE\.claude\skills\
+Invoke-WebRequest https://github.com/sisyga/morpheus-skills/releases/latest/download/morpheus.zip -OutFile $env:TEMP\morpheus.zip
+Expand-Archive $env:TEMP\morpheus.zip -DestinationPath $env:USERPROFILE\.claude\skills\ -Force
 ```
 
 Then use it in any project:
@@ -42,19 +43,21 @@ Then use it in any project:
 
 Or ask naturally — Claude will invoke it when relevant (e.g., "Create a cell sorting model").
 
-## What's included
+## What's in the ZIP
 
 ```
-morpheus/
-├── SKILL.md                    # Main skill (303 lines)
-└── references/
-    ├── model_template.txt      # Minimal valid MorpheusML skeleton
-    ├── morpheusml_doc.txt      # Complete MorpheusML tag reference
-    ├── CPM/                    # 15 Cellular Potts Model examples
-    ├── PDE/                    # 5 reaction-diffusion examples
-    ├── ODE/                    # 7 ODE/signaling examples
-    ├── Multiscale/             # 12 combined CPM+PDE+ODE models
-    └── Miscellaneous/          # 5 cellular automata, morphogen gradient, etc.
+morpheus.zip
+└── morpheus/
+    ├── SKILL.md                    # Main skill instructions
+    ├── LICENSE.txt                 # Apache-2.0
+    └── references/
+        ├── model_template.txt      # Minimal valid MorpheusML skeleton
+        ├── morpheusml_doc.txt      # Complete MorpheusML tag reference
+        ├── CPM/                    # 15 Cellular Potts Model examples
+        ├── PDE/                    # 5 reaction-diffusion examples
+        ├── ODE/                    # 7 ODE/signaling examples
+        ├── Multiscale/             # 12 combined CPM+PDE+ODE models
+        └── Miscellaneous/          # 5 cellular automata, morphogen gradient, etc.
 ```
 
 ## Prerequisites
@@ -71,6 +74,17 @@ Ask Claude things like:
 - "Run this Morpheus model and check the output"
 - "My simulation crashed with 'Symbol not found' — help me fix it"
 - "Analyze these simulation output images"
+
+## Building a release ZIP
+
+To build `morpheus.zip` from source:
+
+```bash
+# From the repo root
+python build_release.py
+```
+
+This creates `morpheus.zip` with the correct structure for Claude Desktop upload.
 
 ## About Morpheus
 
