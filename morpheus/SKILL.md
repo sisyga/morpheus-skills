@@ -1,237 +1,123 @@
 ---
 name: morpheus
-description: Expert skill for Morpheus, the open-source multicellular simulation environment from TU Dresden. Write valid MorpheusML v4 XML models, run simulations via CLI, and debug failures. Use when the user asks to create a Morpheus model, generate MorpheusML XML, run or execute a simulation, install Morpheus, fix a broken model, diagnose simulation errors, interpret logs or output images, or work with Cellular Potts Models, reaction-diffusion PDEs, ODE signaling, or multiscale biological simulations.
-license: Apache-2.0
-compatibility: Requires Morpheus installed locally for simulation execution. XML authoring works without it.
-metadata:
-  author: MorpheusAI
-  version: "1.1.0"
+description: Create, adapt, run, and debug Morpheus multicellular simulations and MorpheusML XML models. Use when Codex needs to write or fix MorpheusML, ground a model in bundled Morpheus examples, search built-in, contributed, or published Morpheus models, run Morpheus from the CLI, diagnose parser or runtime failures, or interpret simulation outputs and example media.
 ---
 
-# Morpheus Expert Skill
+# Morpheus
 
-Morpheus is an open-source modeling and simulation environment for multicellular systems from TU Dresden. It uses MorpheusML v4, a declarative XML language for CPM (Cellular Potts Model), ODE, PDE, and multiscale biological models in 2D/3D.
+Morpheus is an open-source multicellular simulation environment from TU Dresden. It uses MorpheusML XML for Cellular Potts Models, PDEs, ODEs, and mixed multiscale models.
 
-## Important Rules
+## Core Rules
 
-1. **Never invent XML tags or attributes.** Always ground XML in the bundled reference examples.
-2. **Prefer minimal modification** of reference XML over writing from scratch.
-3. Every model must contain Description, Space, Time, and Analysis sections.
-4. Analysis should almost always include Gnuplotter for visual sanity-checking (even infrequent snapshots). Logger-only CSV models are valid when only data output is needed.
-5. When uncertain about a tag, check `references/morpheusml-doc.md` -- never guess.
-6. MorpheusModel version is always "4".
+1. Never invent XML tags or attributes. Ground every non-trivial element in the bundled references or an upstream source listed below.
+2. Prefer adapting the closest example over writing large sections from scratch.
+3. Start new models from `references/model-template.md`.
+4. Treat the example corpus as mixed-version input. Use examples for structure and patterns, then normalize syntax to the target version before delivering final XML.
+5. Add `Analysis` only when it helps. It is recommended for debugging and visualization, but it is not mandatory for every valid model.
 
-## Reference Files
+## Generated Corpus Files
 
-This skill bundles the complete MorpheusML documentation and 43 example models.
+The release build generates a searchable static corpus from a snapshot of the Morpheus model repository.
 
-**Read these files as needed:**
+- `references/examples-summary.md`
+  High-level counts by collection and MorpheusML version.
+- `references/examples-index.md`
+  Grep-friendly catalog of all bundled models. Search here first by title, keyword, tag, organism, collection, or model ID.
+- `references/examples-manifest.json`
+  Structured metadata for deterministic lookup when exact fields matter.
+- `references/examples/<model-key>/overview.md`
+  Per-model summary with source path, tags, main XML, versions, and copied attachments.
+- `references/examples/<model-key>/*`
+  Original model files copied from the static corpus snapshot, including XML, `index.md`, images, and small media attachments.
 
-- `references/model-template.md` -- Minimal valid MorpheusML skeleton to start any new model
-- `references/morpheusml-doc.md` -- Complete MorpheusML tag and attribute reference
-- `references/cpm-examples.md` -- 15 CPM examples (cell sorting, migration, proliferation)
-- `references/pde-examples.md` -- 5 PDE examples (Turing patterns, reaction-diffusion)
-- `references/ode-examples.md` -- 7 ODE examples (signaling, cell cycle)
-- `references/multiscale-examples.md` -- 12 multiscale examples (CPM + PDE + ODE)
-- `references/miscellaneous-examples.md` -- 5 misc examples (Game of Life, morphogen gradient)
+## Upstream Fallback Sources
 
----
+Use the bundled references first. Consult upstream only when the bundled documentation or examples do not answer the task:
 
-## Instructions
+- [Morpheus source code](https://gitlab.com/morpheus.lab/morpheus) -- inspect the implementation when exact plugin behavior, accepted values, defaults, or parser/runtime details are unclear.
+- [Morpheus model repository](https://gitlab.com/morpheus.lab/model-repo) -- search the extensive current library of built-in, contributed, and published models when the bundled examples do not contain a sufficiently close model.
 
-### Step 1: Identify Model Type
+Search only for the plugin or model pattern needed. Stop once the relevant implementation or a close working example provides enough evidence to author, fix, or explain the model.
 
-Determine which type of model the user needs:
+## Retrieval Workflow
 
-- **CPM** (Cellular Potts Model) -- cell sorting, migration, proliferation, adhesion, cell shape. Requires CellTypes, CPM, and CellPopulations sections.
-- **PDE** (Partial Differential Equations) -- reaction-diffusion, Turing patterns, morphogen gradients. Requires Global with Field, Diffusion, and System with DiffEqn.
-- **ODE** (Ordinary Differential Equations) -- signaling networks, cell cycle, gene regulation. Requires System with DiffEqn inside Global or CellType.
-- **Multiscale** (CPM + PDE + ODE) -- chemotaxis with signaling, cell cycle with fields, tissue patterning. Combines elements from above.
-- **Miscellaneous** -- cellular automata, morphogen gradients.
+1. Identify the task type: CPM, PDE, ODE, multiscale, CLI execution, or debugging.
+2. Search `references/examples-index.md` for the closest example by:
+   - biological process
+   - formalism such as CPM, PDE, ODE, multiscale
+   - model ID such as `M2051`
+   - tags, organism, author, or collection (`Built-in Examples`, `Contributed Examples`, `Published Models`)
+3. Open the chosen `references/examples/<model-key>/overview.md`.
+4. Open the main XML file in the same folder.
+5. Open `index.md` and images in that folder only if they add useful biological or geometric context.
+6. Consult `references/morpheusml-doc.md` when tags or attributes are uncertain.
 
-### Step 2: Read Matching Reference File
+## Authoring Workflow
 
-Open the matching reference file from the list above and pick the closest example model to base the new model on. For example, for a CPM cell sorting model, read `references/cpm-examples.md` and use CellSorting_2D as a starting point.
+1. Pick the closest bundled example or start from `references/model-template.md`.
+2. Keep the reference structure intact and change only what the user actually needs.
+3. Preserve valid symbol definitions and make every `symbol-ref` resolvable.
+4. If the source example uses an older or newer MorpheusML version than the target model, port the pattern instead of copying syntax blindly.
+5. Use relative asset paths only when the referenced files are actually present.
 
-### Step 3: Read the Model Template
+## Version Guidance
 
-Read `references/model-template.md` for the minimal valid MorpheusML v4 skeleton.
+- Do not assume every bundled example uses the same MorpheusML version.
+- For new models, default to the version used by `references/model-template.md` unless the user, local installation, or the selected example clearly requires another target.
+- When adapting historical examples, keep the model idea and update obsolete syntax before returning XML.
 
-### Step 4: Adapt Minimally
+## Validation Checklist
 
-Change only what is needed. Keep the reference structure intact. Every MorpheusML model must have this structure:
+Before returning or running a model, verify:
 
-```xml
-<?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="4">
-    <Description>
-        <Title>Model Title</Title>
-        <Details>What this model does</Details>
-    </Description>
-    <Space>
-        <Lattice class="square">
-            <Neighborhood>
-                <Order>optimal</Order>
-            </Neighborhood>
-            <Size symbol="size" value="100, 100, 0"/>
-            <BoundaryConditions>
-                <Condition type="periodic" boundary="x"/>
-                <Condition type="periodic" boundary="y"/>
-            </BoundaryConditions>
-        </Lattice>
-        <SpaceSymbol symbol="space"/>
-    </Space>
-    <Time>
-        <StartTime value="0"/>
-        <StopTime value="1000"/>
-        <TimeSymbol symbol="time"/>
-    </Time>
-    <!-- Model-specific sections go here -->
-    <Analysis>
-        <ModelGraph include-tags="#untagged" format="dot" reduced="false"/>
-        <Gnuplotter time-step="100" decorate="true">
-            <Terminal name="png"/>
-            <Plot title="Visualization">
-                <Cells value="cell.type"/>
-            </Plot>
-        </Gnuplotter>
-        <Logger time-step="100">
-            <Input>
-                <Symbol symbol-ref="cellcount"/>
-            </Input>
-            <Output>
-                <TextOutput/>
-            </Output>
-        </Logger>
-    </Analysis>
-</MorpheusModel>
-```
+- Root element is `MorpheusModel` with the intended version.
+- `Description`, `Space`, and `Time` are present.
+- Every `symbol-ref` has a valid definition or built-in meaning.
+- Contact names match existing `CellType` names exactly.
+- PDE fields, diffusion blocks, and equations refer to the same symbols.
+- Asset paths point to files that actually exist.
+- No tag or attribute was invented.
+- `Analysis` matches the task: include it for debugging or visualization, omit it when it only adds noise.
 
-### Step 5: Validate
+## Morpheus-Specific Heuristics
 
-Before delivering XML, verify all of these:
-
-- Root element is MorpheusModel with version="4"
-- Description section has a Title
-- Space has Lattice with Neighborhood, Size, and BoundaryConditions
-- Time has StartTime, StopTime, and TimeSymbol
-- Every symbol-ref has a matching symbol definition somewhere
-- Contact entries reference existing CellType names
-- If CPM: MonteCarloSampler has MetropolisKinetics with temperature
-- If PDE: Field has Diffusion and System has matching DiffEqn symbol-ref
-- Analysis exists with appropriate outputs (Gnuplotter and/or Logger)
-- No invented tags -- every tag must exist in a reference example or in `references/morpheusml-doc.md`
-
----
-
-## Gnuplotter Plot Content
-
-- CPM models: use Cells element with value="cell.type" or value="cell.id"
-- PDE models: use Field element with symbol-ref pointing to the field symbol name
-- CPM+PDE: use both Cells and Field in same or separate Plot blocks
-
----
+- CPM models usually need `CellTypes`, `CPM`, and `CellPopulations`.
+- PDE models usually need `Global`, `Field`, and a matching `System` with `DiffEqn`.
+- ODE models usually keep `System` blocks in `Global` or in each `CellType`.
+- Multiscale models often combine CPM motion, one or more fields, and cell-level or global ODE systems.
+- Use example media only to understand geometry, initial conditions, or expected qualitative outcomes.
 
 ## Running Morpheus
 
-### Installation
-
-**Linux:** `flatpak install flathub de.tu_dresden.imc.Morpheus` or build from source at https://gitlab.com/morpheus.lab/morpheus. Binary location: `/usr/bin/morpheus` or `/usr/local/bin/morpheus`
-
-**macOS:** Download .dmg from https://morpheus.gitlab.io/download/. Binary location: `/Applications/Morpheus.app/Contents/MacOS/morpheus`
-
-**Windows:** Download installer from https://morpheus.gitlab.io/download/. Binary location: `C:\Program Files\Morpheus\morpheus.exe`
-
-Verify installation: `morpheus --help`
-
-### Execution
+Typical commands:
 
 ```bash
-morpheus -f model.xml           # basic run
-morpheus -f model.xml -o out/   # with output directory
+morpheus -f model.xml
+morpheus -f model.xml --outdir out/ --num-threads 1
 ```
 
-Key flags: `-f` (model file, required), `-o` (output directory), `-j` (threads), `--help`.
+Windows often needs the full executable path:
 
-### Timeout Guidance
+```powershell
+"C:\Program Files\Morpheus\morpheus.exe" -f model.xml
+```
 
-- 100x100 lattice, 1000 steps: seconds to ~1 min
-- 256x256, 5000 steps: minutes
-- 512x512+, 10000+ steps: 10+ minutes
+Useful outputs:
 
-### Output Files
-
-- `model_graph.dot` -- dependency graph (from ModelGraph), confirms XML parsed
-- `plot-N_NNNNN.png` -- visualization snapshots (from Gnuplotter)
-- `logger.csv` -- time-series data (from Logger)
-
-**stdout** shows `Time:` progress lines. "model is up" confirms XML parsed successfully.
-**stderr** shows error messages. Empty stderr means a clean run.
-
-### Checking Success
-
-1. Exit code 0 means completed
-2. Last Time value matches StopTime
-3. PNG files exist if Gnuplotter was configured
-4. logger.csv exists if Logger was configured
-
----
+- `model_graph.dot` confirms the XML parsed.
+- `plot-*.png` shows generated visualizations.
+- `logger.csv` contains logged time-series data.
 
 ## Troubleshooting
 
-### Diagnostic Workflow
+- Unknown tag: search `references/morpheusml-doc.md` and compare with a nearby working example.
+- Symbol not found: list definitions and usages, then fix the mismatch.
+- Missing output files: inspect `Analysis` first.
+- Parser crash or hang: reduce lattice size, stop time, and optional analysis frequency.
+- Wrong qualitative behavior: compare initial conditions, boundary conditions, diffusion rates, adhesion values, and temperatures against the closest example.
 
-1. **Read stderr** -- first error is usually the root cause
-2. **Read stdout** -- check time progression
-3. **Check output files** -- PNGs, CSVs, model_graph.dot present?
-4. **Cross-reference with XML** -- match errors to specific elements
-5. **Consult references** -- compare against working examples
+## Output Expectations
 
-### Common Errors
-
-**Unknown tag "X"**: Invented tag. Search `references/morpheusml-doc.md` for the correct tag name.
-
-**Symbol "X" not found**: Undefined symbol-ref. Ensure every symbol-ref has a matching symbol definition. Built-in symbols include time, cellcount, cell.type, cell.id, cell.center.x, cell.center.y.
-
-**Cannot read file**: Wrong path. Check the -f argument and use absolute paths.
-
-**Segfault**: Malformed lattice or boundaries. Simplify lattice, check bounds, reduce size.
-
-**Timeout or hang**: Model too large. Halve Size and/or StopTime.
-
-**No PNG output**: Missing Gnuplotter. Add Gnuplotter with Terminal name="png".
-
-**No CSV output**: Missing Logger. Add Logger with TextOutput.
-
-**Cannot parse value**: Wrong data type. Check `references/morpheusml-doc.md` for correct types.
-
-**CellType "X" not found**: Contact name mismatch. Match type1/type2 to CellType name exactly.
-
-### Fix Strategies
-
-**Tag/structure errors:** Read closest reference example, compare tag-by-tag, replace broken section.
-
-**Symbol errors:** List all symbol definitions and all symbol-ref usages. Fix mismatches.
-
-**Performance:** Halve lattice Size (most impactful), halve StopTime, increase time-step in Gnuplotter/Logger.
-
-**Wrong results:** Check parameter magnitudes against references. Verify initial conditions. Check boundary conditions (periodic vs noflux). For CPM: temperature too high means random, too low means frozen. For PDE: high diffusion rate can cause instability.
-
-### Common Pitfalls
-
-1. Missing Neighborhood inside Lattice -- always include Order set to optimal
-2. Undefined symbol references -- every symbol-ref needs a matching symbol
-3. Missing BoundaryConditions -- always define for x and y (and z if 3D)
-4. Wrong Contact names -- type1/type2 must exactly match CellType name values
-5. Using Cells in Gnuplotter when no CPM cells exist -- use Field for PDE-only models
-6. Inventing tags -- if not in any reference file, it does not exist
-7. Version mismatch -- always use version="4"
-8. Missing SpaceSymbol inside Space
-
-### Image Analysis
-
-**CPM:** Well-defined cell boundaries means healthy. Jagged/fragmented means parameter issues. Distinct clusters means correct sorting.
-
-**PDE:** Regular spots/stripes means correct Turing regime. Smooth gradients means stable diffusion. Spirals/waves means working excitable medium.
-
-**General:** Compare early vs late frames. Static frames means equilibrium or wrong parameters. All-black/white means wrong visualization bounds.
+- Return minimal, valid MorpheusML instead of speculative XML.
+- When you base a model on a bundled example, name the example you adapted.
+- When the task depends on execution, inspect stdout, stderr, and output files before concluding the run succeeded.

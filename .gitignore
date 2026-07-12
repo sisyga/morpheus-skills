@@ -1,3 +1,15 @@
 morpheus.zip
 guide.pdf
 .claude/
+model-repo/
+model-repo-main.zip
+*.avi
+*.gif
+*.m4v
+*.mkv
+*.mov
+*.mp4
+*.mpeg
+*.mpg
+*.webm
+*.wmv

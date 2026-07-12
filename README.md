@@ -1,30 +1,31 @@
 # Morpheus Skills
 
-An [Agent Skill](https://agentskills.io) that makes Claude an expert in **Morpheus**, the open-source multicellular simulation environment from [TU Dresden](https://morpheus.gitlab.io/). Covers writing MorpheusML v4 XML models, running simulations, and debugging failures.
+An [Agent Skill](https://agentskills.io) that makes Claude or Codex effective at working with **Morpheus**, the multicellular simulation environment from [TU Dresden](https://morpheus.gitlab.io/). The skill covers MorpheusML authoring, example-grounded adaptation, CLI execution, and debugging.
 
-## What it does
+## What Changed
 
-This skill teaches Claude to:
+The release build no longer flattens a small hand-picked XML set into a few large markdown files.
 
-- **Write valid MorpheusML XML** — Cellular Potts Models (CPM), reaction-diffusion PDEs, ODE signaling, and multiscale simulations in 2D/3D
-- **Run Morpheus from the CLI** — installation, execution, output interpretation
-- **Debug failures** — diagnose errors, fix broken models, analyze logs and output images
+Instead, it now packages a static snapshot of the public [Morpheus model repository](https://gitlab.com/morpheus.lab/model-repo) and generates:
 
-It bundles 43 reference XML models and the complete MorpheusML tag documentation so Claude can always ground its answers in real examples rather than guessing.
+- `examples-summary.md` for corpus overview
+- `examples-index.md` for grep-friendly lookup
+- `examples-manifest.json` for structured metadata
+- one folder per model with `overview.md`, XML, `index.md`, and copied non-video attachments
+
+This keeps retrieval sharper than searching giant merged markdown blobs and lets the skill use built-in, contributed, and published models from one release snapshot.
 
 ## Install in Claude Desktop
 
 1. Go to the [Releases](https://github.com/sisyga/morpheus-skills/releases/latest) page
-2. Download **`morpheus.zip`**
-3. Open **Claude Desktop** → **Settings** → **Capabilities**
-4. Ensure **Code execution and file creation** is enabled
-5. Click **Upload skill** and select the downloaded `morpheus.zip`
+2. Download `morpheus.zip`
+3. Open Claude Desktop -> Settings -> Capabilities
+4. Ensure code execution and file creation are enabled
+5. Upload `morpheus.zip`
 
-That's it — Claude will automatically use the skill when you ask about Morpheus models.
+## Install in Claude Code or Codex
 
-## Install in Claude Code (CLI)
-
-Download the latest release and extract to your personal skills directory:
+Extract the release to your personal skills directory:
 
 ```bash
 # macOS / Linux
@@ -36,95 +37,93 @@ Invoke-WebRequest https://github.com/sisyga/morpheus-skills/releases/latest/down
 Expand-Archive $env:TEMP\morpheus.zip -DestinationPath $env:USERPROFILE\.claude\skills\ -Force
 ```
 
-Then use it in any project:
-```
-/morpheus
-```
+## Release Layout
 
-Or ask naturally — Claude will invoke it when relevant (e.g., "Create a cell sorting model").
-
-## What's in the ZIP
-
-The release ZIP is flat (no nested subdirectories) for Claude Desktop compatibility.
-XML examples are merged into per-category markdown files during the build.
-
-```
+```text
 morpheus.zip
-└── morpheus/
-    ├── SKILL.md                       # Main skill instructions
-    ├── LICENSE.txt                    # Apache-2.0
-    ├── references/
-    │   ├── model-template.md          # Minimal valid MorpheusML skeleton
-    │   ├── morpheusml-doc.md          # Complete MorpheusML tag reference
-    │   ├── cpm-examples.md            # 15 CPM examples (merged from CPM/*.xml)
-    │   ├── pde-examples.md            # 5 reaction-diffusion examples
-    │   ├── ode-examples.md            # 7 ODE/signaling examples
-    │   ├── multiscale-examples.md     # 12 combined CPM+PDE+ODE models
-    │   └── miscellaneous-examples.md  # 5 cellular automata, morphogen gradient
-    └── assets/
-        └── *.tif                      # Image assets used by some models
+`-- morpheus/
+    |-- SKILL.md
+    |-- LICENSE.txt
+    |-- agents/
+    |   `-- openai.yaml
+    `-- references/
+        |-- model-template.md
+        |-- morpheusml-doc.md
+        |-- examples-summary.md
+        |-- examples-index.md
+        |-- examples-manifest.json
+        `-- examples/
+            `-- <model-key>/
+                |-- overview.md
+                |-- *.xml
+                |-- index.md
+                `-- attachments...
 ```
 
-## Prerequisites
+## Local Build Inputs
 
-- **For XML authoring and debugging:** No prerequisites — works immediately
-- **For running simulations:** [Morpheus](https://morpheus.gitlab.io/download/) must be installed locally
+Place a local snapshot of the Morpheus model repository at:
 
-## Examples
-
-Ask Claude things like:
-
-- "Create a Turing pattern reaction-diffusion model"
-- "Write a CPM cell sorting simulation with two cell types"
-- "Run this Morpheus model and check the output"
-- "My simulation crashed with 'Symbol not found' — help me fix it"
-- "Analyze these simulation output images"
-
-## Repo structure
-
-The repo keeps XML examples in subfolders for easy editing. The build script
-flattens them into per-category markdown files for the release ZIP.
-
-```
-morpheus/
-├── SKILL.md
-├── LICENSE.txt
-├── references/
-│   ├── CPM/*.xml               # 15 Cellular Potts Model examples
-│   ├── PDE/*.xml               # 5 reaction-diffusion examples
-│   ├── ODE/*.xml               # 7 ODE/signaling examples
-│   ├── Multiscale/*.xml        # 12 combined multiscale models
-│   ├── Miscellaneous/*.xml     # 5 cellular automata, morphogen gradient
-│   ├── model_template.txt      # Minimal valid MorpheusML skeleton
-│   └── morpheusml_doc.txt      # Complete MorpheusML tag reference
-└── assets/
-    └── *.tif                   # Image assets referenced by some models
+```text
+./model-repo/
 ```
 
-## Building a release ZIP
-
-To build `morpheus.zip` from source:
+or pass an explicit path to the builder:
 
 ```bash
-# From the repo root
-python build_release.py
+python build_release.py --model-repo /path/to/model-repo
 ```
 
-This merges all XML examples into per-category markdown files, renames .txt
-references to .md, includes assets, and produces a flat ZIP suitable for
-Claude Desktop upload.
+The source can be a local checkout or another static snapshot of:
+
+- [https://gitlab.com/morpheus.lab/model-repo](https://gitlab.com/morpheus.lab/model-repo)
+
+## Building a Release
+
+```bash
+python build_release.py --model-repo ./model-repo
+```
+
+Optional flag:
+
+```bash
+python build_release.py --model-repo ./model-repo --max-binary-mb 25
+```
+
+Video files are always skipped. Large non-text attachments above the configured size cap are also skipped and recorded in the generated per-model overview files.
+
+## Repo Structure
+
+```text
+morpheus-skills/
+|-- build_release.py
+|-- model-repo/                  # local snapshot, ignored by git
+`-- morpheus/
+    |-- SKILL.md
+    |-- LICENSE.txt
+    |-- agents/
+    |   `-- openai.yaml
+    |-- assets/
+    `-- references/
+        |-- model_template.txt
+        `-- morpheusml_doc.txt
+```
+
+## Example Prompts
+
+- "Create a Turing pattern reaction-diffusion model in Morpheus."
+- "Find a published Morpheus model close to Delta-Notch signaling and adapt it."
+- "Run this Morpheus XML and tell me why it fails."
+- "Compare my CPM model against a bundled example and fix the symbol errors."
 
 ## About Morpheus
 
-[Morpheus](https://morpheus.gitlab.io/) is a free, open-source modeling and simulation environment for multicellular systems biology. It integrates cell-based models with ODEs and PDEs using a declarative XML language called MorpheusML.
-
-- **Website:** https://morpheus.gitlab.io/
-- **Repository:** https://gitlab.com/morpheus.lab/morpheus
-- **Documentation:** https://gitlab.com/morpheus.lab/morpheus/-/wikis/home
-- **Model repository:** https://morpheus.gitlab.io/model/
+- Website: [https://morpheus.gitlab.io/](https://morpheus.gitlab.io/)
+- Repository: [https://gitlab.com/morpheus.lab/morpheus](https://gitlab.com/morpheus.lab/morpheus)
+- Model repository: [https://gitlab.com/morpheus.lab/model-repo](https://gitlab.com/morpheus.lab/model-repo)
 
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
 
-The bundled reference XML models are from the [Morpheus model repository](https://morpheus.gitlab.io/model/) (BSD 3-Clause).
+The bundled model files come from the Morpheus model repository and keep their original upstream licensing and attribution context.

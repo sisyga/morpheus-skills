@@ -1,0 +1,7 @@
+interface:
+  display_name: "Morpheus"
+  short_description: "Build and debug MorpheusML simulations"
+  default_prompt: "Use $morpheus to find a close bundled Morpheus example and adapt it into a working MorpheusML model."
+
+policy:
+  allow_implicit_invocation: true
