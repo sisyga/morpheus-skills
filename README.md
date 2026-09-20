@@ -2,18 +2,22 @@
 
 An [Agent Skill](https://agentskills.io) that makes Claude or Codex effective at working with **Morpheus**, the multicellular simulation environment from [TU Dresden](https://morpheus.gitlab.io/). The skill covers MorpheusML authoring, example-grounded adaptation, CLI execution, and debugging.
 
-## What Changed
+## Version 1.3
 
-The release build no longer flattens a small hand-picked XML set into a few large markdown files.
+Version 1.3 updates the skill's authoring, validation, execution, and source-routing
+guidance. The default release remains self-contained and lean: tracked XML examples
+are converted into five curated Markdown references when the ZIP is built.
 
-Instead, it now packages a static snapshot of the public [Morpheus model repository](https://gitlab.com/morpheus.lab/model-repo) and generates:
+For offline-heavy use, the builder can optionally add a static snapshot of the public
+[Morpheus model repository](https://gitlab.com/morpheus.lab/model-repo), including:
 
 - `examples-summary.md` for corpus overview
 - `examples-index.md` for grep-friendly lookup
 - `examples-manifest.json` for structured metadata
 - one folder per model with `overview.md`, XML, `index.md`, and copied non-video attachments
 
-This keeps retrieval sharper than searching giant merged markdown blobs and lets the skill use built-in, contributed, and published models from one release snapshot.
+The optional corpus is not included in the default release. When network access is
+available, the skill instead consults the official model repository selectively.
 
 ## Install in Claude Desktop
 
@@ -49,55 +53,59 @@ morpheus.zip
     `-- references/
         |-- model-template.md
         |-- morpheusml-doc.md
-        |-- examples-summary.md
-        |-- examples-index.md
-        |-- examples-manifest.json
-        `-- examples/
-            `-- <model-key>/
-                |-- overview.md
-                |-- *.xml
-                |-- index.md
-                `-- attachments...
+        |-- cpm-examples.md
+        |-- pde-examples.md
+        |-- ode-examples.md
+        |-- multiscale-examples.md
+        `-- miscellaneous-examples.md
 ```
 
-## Local Build Inputs
+## Building the Default Release
 
-Place a local snapshot of the Morpheus model repository at:
-
-```text
-./model-repo/
-```
-
-or pass an explicit path to the builder:
+The default build needs no external model checkout:
 
 ```bash
-python build_release.py --model-repo /path/to/model-repo
+python3 build_release.py
+```
+
+## Building the Optional Offline-Full Release
+
+Provide a local checkout or static snapshot of the Morpheus model repository:
+
+```bash
+python3 build_release.py \
+  --model-repo /path/to/model-repo \
+  --output morpheus-offline-full.zip
 ```
 
 The source can be a local checkout or another static snapshot of:
 
 - [https://gitlab.com/morpheus.lab/model-repo](https://gitlab.com/morpheus.lab/model-repo)
 
-## Building a Release
+An optional size limit applies to non-text attachments:
 
 ```bash
-python build_release.py --model-repo ./model-repo
-```
-
-Optional flag:
-
-```bash
-python build_release.py --model-repo ./model-repo --max-binary-mb 25
+python3 build_release.py \
+  --model-repo /path/to/model-repo \
+  --output morpheus-offline-full.zip \
+  --max-binary-mb 25
 ```
 
 Video files are always skipped. Large non-text attachments above the configured size cap are also skipped and recorded in the generated per-model overview files.
+
+## Automated Releases
+
+Pull requests and pushes to `master` build and validate the lean ZIP without publishing
+it. Pushing a tag such as `v1.3.0` runs the release workflow, verifies that the tag
+matches `metadata.version` in `morpheus/SKILL.md`, builds and validates `morpheus.zip`,
+then creates the corresponding GitHub release or replaces its existing ZIP asset.
 
 ## Repo Structure
 
 ```text
 morpheus-skills/
 |-- build_release.py
-|-- model-repo/                  # local snapshot, ignored by git
+|-- validate_release.py
 `-- morpheus/
     |-- SKILL.md
     |-- LICENSE.txt
@@ -105,6 +113,11 @@ morpheus-skills/
     |   `-- openai.yaml
     |-- assets/
     `-- references/
+        |-- CPM/*.xml
+        |-- PDE/*.xml
+        |-- ODE/*.xml
+        |-- Multiscale/*.xml
+        |-- Miscellaneous/*.xml
         |-- model_template.txt
         `-- morpheusml_doc.txt
 ```

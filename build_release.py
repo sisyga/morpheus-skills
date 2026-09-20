@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build morpheus.zip for skill upload from a static Morpheus model corpus.
+"""Build a Morpheus skill release.
 
-The release package keeps core Morpheus reference docs plus a generated, searchable
-snapshot of the Morpheus model repository. The build expects a local checkout or
-snapshot of https://gitlab.com/morpheus.lab/model-repo at ``./model-repo`` unless a
-different path is provided with ``--model-repo``.
+The default release is lean: it converts the tracked reference documents to Markdown
+and merges each tracked XML category into one Markdown reference. Pass ``--model-repo``
+to additionally package a searchable, pinned snapshot of the public Morpheus model
+repository for offline use.
 
 Generated release layout:
     morpheus/
@@ -14,15 +14,15 @@ Generated release layout:
     `-- references/
         |-- model-template.md
         |-- morpheusml-doc.md
-        |-- examples-summary.md
-        |-- examples-index.md
-        |-- examples-manifest.json
-        `-- examples/
-            `-- <model-key>/
-                |-- overview.md
-                |-- *.xml
-                |-- index.md
-                `-- attachments...
+        |-- cpm-examples.md
+        |-- pde-examples.md
+        |-- ode-examples.md
+        |-- multiscale-examples.md
+        `-- miscellaneous-examples.md
+
+The optional offline-full release also contains ``examples-summary.md``,
+``examples-index.md``, ``examples-manifest.json``, and one folder per model under
+``references/examples/``.
 """
 
 from __future__ import annotations
@@ -43,9 +43,16 @@ from xml.etree import ElementTree as ET
 
 SKILL_DIR = Path("morpheus")
 DEFAULT_OUTPUT = Path("morpheus.zip")
-DEFAULT_MODEL_REPO = Path("model-repo")
 GENERATED_REFERENCES_DIR = Path("references")
 GENERATED_EXAMPLES_DIR = GENERATED_REFERENCES_DIR / "examples"
+
+CATEGORIES = {
+    "CPM": "Cellular Potts Model (CPM) Examples",
+    "PDE": "Partial Differential Equation (PDE) Examples",
+    "ODE": "Ordinary Differential Equation (ODE) Examples",
+    "Multiscale": "Multiscale Model Examples",
+    "Miscellaneous": "Miscellaneous Examples",
+}
 
 TXT_TO_MD = {
     "model_template.txt": "model-template.md",
@@ -115,8 +122,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--model-repo",
-        default=str(DEFAULT_MODEL_REPO),
-        help="Path to a local checkout or snapshot of morpheus.lab/model-repo",
+        help=(
+            "Optionally include a searchable offline corpus from a local checkout "
+            "or snapshot of morpheus.lab/model-repo"
+        ),
     )
     parser.add_argument(
         "--output",
@@ -130,6 +139,34 @@ def parse_args() -> argparse.Namespace:
         help="Skip non-text attachments larger than this many megabytes",
     )
     return parser.parse_args()
+
+
+def merge_category_to_markdown(category: str, title: str) -> str | None:
+    """Merge the tracked XML files for one category into a Markdown reference."""
+    source_dir = SKILL_DIR / "references" / category
+    if not source_dir.is_dir():
+        return None
+
+    xml_files = sorted(source_dir.glob("*.xml"))
+    if not xml_files:
+        return None
+
+    parts = [
+        f"# {title}\n",
+        f"Reference MorpheusML v4 XML models for {category.lower()} simulations.\n",
+        "---\n",
+    ]
+    for xml_path in xml_files:
+        parts.extend(
+            [
+                f"## {xml_path.stem}\n",
+                "```xml",
+                xml_path.read_text(encoding="utf-8").rstrip(),
+                "```\n",
+            ]
+        )
+
+    return "\n".join(parts)
 
 
 def strip_yaml_scalar(value: str) -> str:
@@ -553,25 +590,28 @@ def add_tree_if_present(zf: zipfile.ZipFile, source_dir: Path, target_root: Path
 
 def build() -> None:
     args = parse_args()
-    model_repo_dir = Path(args.model_repo)
     output_path = Path(args.output)
     max_binary_bytes = int(args.max_binary_mb * 1024 * 1024)
 
     if not SKILL_DIR.is_dir():
         raise SystemExit(f"Error: '{SKILL_DIR}/' directory not found. Run from the repo root.")
-    if not model_repo_dir.is_dir():
-        raise SystemExit(
-            "Error: model corpus not found. Place a local morpheus.lab/model-repo snapshot at "
-            f"'{model_repo_dir}' or pass --model-repo <path>."
+
+    entries: list[ModelEntry] = []
+    example_files: list[ReleaseFile] = []
+    source_commit: str | None = None
+    model_repo_dir: Path | None = None
+    if args.model_repo:
+        model_repo_dir = Path(args.model_repo)
+        if not model_repo_dir.is_dir():
+            raise SystemExit(f"Error: model corpus not found at '{model_repo_dir}'.")
+
+        entries, example_files, source_commit = collect_model_entries(
+            model_repo_dir, max_binary_bytes
         )
-
-    entries, example_files, source_commit = collect_model_entries(model_repo_dir, max_binary_bytes)
-    if not entries:
-        raise SystemExit(f"Error: no model directories with XML files found under '{model_repo_dir}'.")
-
-    examples_summary = build_examples_summary(entries, model_repo_dir, source_commit)
-    examples_index = build_examples_index(entries)
-    examples_manifest = build_examples_manifest(entries, model_repo_dir, source_commit)
+        if not entries:
+            raise SystemExit(
+                f"Error: no model directories with XML files found under '{model_repo_dir}'."
+            )
 
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         add_local_file(zf, SKILL_DIR / "SKILL.md", "morpheus/SKILL.md")
@@ -582,15 +622,27 @@ def build() -> None:
             if source.is_file():
                 add_local_file(zf, source, f"morpheus/references/{md_name}")
 
+        for category, title in CATEGORIES.items():
+            markdown = merge_category_to_markdown(category, title)
+            if markdown:
+                arcname = f"morpheus/references/{category.lower()}-examples.md"
+                zf.writestr(arcname, markdown)
+                print(f"  {arcname}")
+
         add_tree_if_present(zf, SKILL_DIR / "agents", Path("morpheus/agents"))
         add_tree_if_present(zf, SKILL_DIR / "assets", Path("morpheus/assets"))
 
-        zf.writestr("morpheus/references/examples-summary.md", examples_summary)
-        print("  morpheus/references/examples-summary.md")
-        zf.writestr("morpheus/references/examples-index.md", examples_index)
-        print("  morpheus/references/examples-index.md")
-        zf.writestr("morpheus/references/examples-manifest.json", examples_manifest)
-        print("  morpheus/references/examples-manifest.json")
+        if model_repo_dir is not None:
+            examples_summary = build_examples_summary(entries, model_repo_dir, source_commit)
+            examples_index = build_examples_index(entries)
+            examples_manifest = build_examples_manifest(entries, model_repo_dir, source_commit)
+
+            zf.writestr("morpheus/references/examples-summary.md", examples_summary)
+            print("  morpheus/references/examples-summary.md")
+            zf.writestr("morpheus/references/examples-index.md", examples_index)
+            print("  morpheus/references/examples-index.md")
+            zf.writestr("morpheus/references/examples-manifest.json", examples_manifest)
+            print("  morpheus/references/examples-manifest.json")
 
         for entry in entries:
             overview = build_overview(entry, source_commit)

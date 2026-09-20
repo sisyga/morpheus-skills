@@ -1,0 +1,62 @@
+name: Release skill
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify tag matches skill version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          text = Path("morpheus/SKILL.md").read_text(encoding="utf-8")
+          match = re.search(r'^\s+version:\s*["\']?([^"\'\s]+)', text, re.MULTILINE)
+          if not match:
+              raise SystemExit("SKILL.md has no metadata.version")
+
+          expected_tag = f"v{match.group(1)}"
+          actual_tag = os.environ["RELEASE_TAG"]
+          if actual_tag != expected_tag:
+              raise SystemExit(
+                  f"Release tag {actual_tag!r} does not match SKILL.md version {expected_tag!r}"
+              )
+          PY
+
+      - name: Build lean release
+        run: python3 build_release.py --output morpheus.zip
+
+      - name: Validate release archive
+        run: python3 validate_release.py morpheus.zip --profile lean
+
+      - name: Create release or replace asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" morpheus.zip --clobber
+          else
+            gh release create "$RELEASE_TAG" morpheus.zip \
+              --verify-tag \
+              --generate-notes \
+              --title "Morpheus Skill $RELEASE_TAG"
+          fi

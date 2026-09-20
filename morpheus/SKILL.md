@@ -1,123 +1,136 @@
 ---
 name: morpheus
-description: Create, adapt, run, and debug Morpheus multicellular simulations and MorpheusML XML models. Use when Codex needs to write or fix MorpheusML, ground a model in bundled Morpheus examples, search built-in, contributed, or published Morpheus models, run Morpheus from the CLI, diagnose parser or runtime failures, or interpret simulation outputs and example media.
+description: Use when a task involves authoring, translating, running, validating, or debugging Morpheus/MorpheusML models, including CPM, ODE, PDE, multiscale simulations, and paper reproductions.
+license: Apache-2.0
+metadata:
+  author: MorpheusAI
+  version: "1.3.0"
 ---
 
 # Morpheus
 
-Morpheus is an open-source multicellular simulation environment from TU Dresden. It uses MorpheusML XML for Cellular Potts Models, PDEs, ODEs, and mixed multiscale models.
+Morpheus is an open-source modeling and simulation environment for multicellular systems. MorpheusML is its declarative XML language for Cellular Potts (CPM), ODE, PDE, and multiscale biological models in 2D or 3D.
 
-## Core Rules
+Simulation execution requires a local Morpheus installation. XML authoring does not.
 
-1. Never invent XML tags or attributes. Ground every non-trivial element in the bundled references or an upstream source listed below.
-2. Prefer adapting the closest example over writing large sections from scratch.
-3. Start new models from `references/model-template.md`.
-4. Treat the example corpus as mixed-version input. Use examples for structure and patterns, then normalize syntax to the target version before delivering final XML.
-5. Add `Analysis` only when it helps. It is recommended for debugging and visualization, but it is not mandatory for every valid model.
+## Operating Contract
 
-## Generated Corpus Files
+For create, translate, fix, or reproduce tasks, make the required in-scope local changes and run the model by default when Morpheus execution is available. Use observed outputs to iteratively refine the model. For review or diagnosis, inspect the supplied model and artifacts and report findings; do not rewrite or run the model unless the request includes that work.
 
-The release build generates a searchable static corpus from a snapshot of the Morpheus model repository.
+Preserve supplied papers, reference files, and prior run artifacts. Write generated files only to the requested workspace or run directory. Stop before destructive actions, external writes, or a material expansion beyond the requested model.
 
-- `references/examples-summary.md`
-  High-level counts by collection and MorpheusML version.
-- `references/examples-index.md`
-  Grep-friendly catalog of all bundled models. Search here first by title, keyword, tag, organism, collection, or model ID.
-- `references/examples-manifest.json`
-  Structured metadata for deterministic lookup when exact fields matter.
-- `references/examples/<model-key>/overview.md`
-  Per-model summary with source path, tags, main XML, versions, and copied attachments.
-- `references/examples/<model-key>/*`
-  Original model files copied from the static corpus snapshot, including XML, `index.md`, images, and small media attachments.
+Completion means reporting the model path, structural and runtime validation performed, representative output evidence, material assumptions, and any remaining mismatch with the requested behavior. Valid XML alone does not establish successful biological or visual reproduction.
 
-## Upstream Fallback Sources
+## Authoring and Validation Workflow
 
-Use the bundled references first. Consult upstream only when the bundled documentation or examples do not answer the task:
+1. **Ground the target.** State the model class, requested observable, and material assumptions.
+   - For paper-based work, use text and methods for mechanisms, entities, equations, parameters, and initial or boundary conditions.
+   - Use relevant figures, captions, and surrounding text for qualitative targets such as clustering, fronts, stripes, spots, gradients, lumen formation, or invasion.
+   - Record inferred or approximated values instead of presenting them as reported facts.
+   - If the source uses another simulator or formalism, translate its biology, mechanisms, parameters, and observables before mapping them to MorpheusML.
+2. **Choose a grounded starting model.** Follow [Sources and Tool Routing](#sources-and-tool-routing). Read the closest compatible example and `references/model-template.md`. Start with bundled or MCP references; use the official model repository when they lack a suitable example, and consult the MorpheusML documentation or official source code for unfamiliar constructs or version-sensitive behavior.
+3. **Adapt minimally.** Preserve known-good ordering and nesting. Change only the mechanisms, parameters, geometry, initialization, and analysis required by the target.
+4. **Validate structure.** Check the [MorpheusML Quick Reference](#morpheusml-quick-reference), then verify every symbol relationship, model-specific section, contact name, equation reference, and configured output before execution.
+5. **Run at reduced scale first.** For create, translate, fix, or reproduce tasks, create a separate reduced-scale configuration whenever Morpheus execution is available. Use smaller lattice dimensions, fewer cells or population members, and a shorter `StopTime` as appropriate. Preserve the mechanisms, geometry class, boundary types, and relative parameter relationships needed for the reduced run to remain meaningful. If execution is unavailable, leave runtime and phenotype explicitly unverified and continue to step 8 with structural validation only.
+6. **Iterate at reduced scale.**
+   - Confirm exit code zero, progression to `StopTime`, configured PNG and/or CSV outputs, and no remaining stderr error.
+   - Inspect early and late frames and compare observed morphology or dynamics with the requested phenomenon.
+   - Make one conservative, evidence-backed correction at a time and repeat the reduced run.
+   - Estimate whether the target-scale run fits the available time and resources. Do not scale up while failures, timeouts, or unexplained behavior remain.
+7. **Validate at target scale.** After the reduced-scale gate passes, restore the target dimensions, populations, and duration. Run the target model and repeat both the technical and visual or biological evidence checks. Reduced-scale success does not establish a scale-dependent target phenotype.
+8. **Report the result.** Distinguish structural validation, reduced-scale behavior, and target-scale evidence. State anything that could not be executed or verified.
 
-- [Morpheus source code](https://gitlab.com/morpheus.lab/morpheus) -- inspect the implementation when exact plugin behavior, accepted values, defaults, or parser/runtime details are unclear.
-- [Morpheus model repository](https://gitlab.com/morpheus.lab/model-repo) -- search the extensive current library of built-in, contributed, and published models when the bundled examples do not contain a sufficiently close model.
+## MorpheusML Quick Reference
 
-Search only for the plugin or model pattern needed. Stop once the relevant implementation or a close working example provides enough evidence to author, fix, or explain the model.
+### Core Invariants
 
-## Retrieval Workflow
+- Never invent XML tags or attributes. Ground each unfamiliar construct in a compatible bundled or official model, `references/morpheusml-doc.md`, or the official Morpheus source code.
+- Prefer a minimal adaptation of the closest reference model over XML written from scratch.
+- New models use `<MorpheusModel version="4">` and contain `Description`, `Space`, `Time`, and `Analysis`.
+- `Description` contains a `Title`. `Space` contains a `Lattice` with `Neighborhood`, `Size`, and `BoundaryConditions`, plus a `SpaceSymbol`. `Time` contains `StartTime`, `StopTime`, and `TimeSymbol`.
+- Every `symbol-ref` resolves to a defined symbol. Every contact pair names existing `CellType` values.
+- CPM models include `CellTypes`, `CPM`, and `CellPopulations`. `MonteCarloSampler` has `MetropolisKinetics` with temperature. Biological CPM cell types normally include `ConnectivityConstraint` unless the requested biology or closest reference justifies fragmentation.
+- PDE fields include `Diffusion`; their systems contain matching `DiffEqn` references.
+- `Analysis` contains outputs appropriate to the task. Use `Gnuplotter` for visual validation and/or `Logger` for numerical output. Logger-only models are valid when no visual phenotype needs inspection.
+- In `Gnuplotter`, use `Cells value="cell.type"` or `cell.id` for CPM and `Field symbol-ref="..."` for PDE.
 
-1. Identify the task type: CPM, PDE, ODE, multiscale, CLI execution, or debugging.
-2. Search `references/examples-index.md` for the closest example by:
-   - biological process
-   - formalism such as CPM, PDE, ODE, multiscale
-   - model ID such as `M2051`
-   - tags, organism, author, or collection (`Built-in Examples`, `Contributed Examples`, `Published Models`)
-3. Open the chosen `references/examples/<model-key>/overview.md`.
-4. Open the main XML file in the same folder.
-5. Open `index.md` and images in that folder only if they add useful biological or geometric context.
-6. Consult `references/morpheusml-doc.md` when tags or attributes are uncertain.
+### Model Types
 
-## Authoring Workflow
+| Class | Typical use | Required model-specific structure |
+| --- | --- | --- |
+| CPM | Cell sorting, migration, proliferation, adhesion, shape | `CellTypes`, `CPM`, `CellPopulations` |
+| PDE | Reaction-diffusion, Turing patterns, morphogen gradients | Global `Field`, `Diffusion`, `System` with `DiffEqn` |
+| ODE | Signaling, cell cycle, gene regulation | `System` with `DiffEqn` in `Global` or a `CellType` |
+| Multiscale | Chemotaxis with signaling, cell-cycle/field coupling, tissue patterning | Relevant CPM, PDE, and ODE structures combined |
+| Miscellaneous | Cellular automata or models outside the classes above | Closest verified reference structure |
 
-1. Pick the closest bundled example or start from `references/model-template.md`.
-2. Keep the reference structure intact and change only what the user actually needs.
-3. Preserve valid symbol definitions and make every `symbol-ref` resolvable.
-4. If the source example uses an older or newer MorpheusML version than the target model, port the pattern instead of copying syntax blindly.
-5. Use relative asset paths only when the referenced files are actually present.
+## Sources and Tool Routing
 
-## Version Guidance
+Keep source authority distinct:
 
-- Do not assume every bundled example uses the same MorpheusML version.
-- For new models, default to the version used by `references/model-template.md` unless the user, local installation, or the selected example clearly requires another target.
-- When adapting historical examples, keep the model idea and update obsolete syntax before returning XML.
+- Supplied papers and user artifacts establish the requested biology, parameters, and target phenotype.
+- Compatible Morpheus models, documentation, and source code establish valid MorpheusML structure and runtime semantics.
+- Observed simulation outputs establish what the generated model actually does.
+- Reference models are structural and mechanistic evidence, not proof that the requested paper result was reproduced.
 
-## Validation Checklist
+### Bundled References
 
-Before returning or running a model, verify:
+Load only references relevant to the current decision:
 
-- Root element is `MorpheusModel` with the intended version.
-- `Description`, `Space`, and `Time` are present.
-- Every `symbol-ref` has a valid definition or built-in meaning.
-- Contact names match existing `CellType` names exactly.
-- PDE fields, diffusion blocks, and equations refer to the same symbols.
-- Asset paths point to files that actually exist.
-- No tag or attribute was invented.
-- `Analysis` matches the task: include it for debugging or visualization, omit it when it only adds noise.
+- `references/model-template.md` — minimal MorpheusML v4 skeleton
+- `references/morpheusml-doc.md` — tag and attribute reference
+- `references/cpm-examples.md` — cell sorting, migration, proliferation, adhesion, and cell shape
+- `references/pde-examples.md` — reaction-diffusion, Turing patterns, and morphogen gradients
+- `references/ode-examples.md` — signaling, cell-cycle, and gene-regulation systems
+- `references/multiscale-examples.md` — coupled CPM, PDE, and ODE models
+- `references/miscellaneous-examples.md` — cellular automata and other models
 
-## Morpheus-Specific Heuristics
+### Official External Sources
 
-- CPM models usually need `CellTypes`, `CPM`, and `CellPopulations`.
-- PDE models usually need `Global`, `Field`, and a matching `System` with `DiffEqn`.
-- ODE models usually keep `System` blocks in `Global` or in each `CellType`.
-- Multiscale models often combine CPM motion, one or more fields, and cell-level or global ODE systems.
-- Use example media only to understand geometry, initial conditions, or expected qualitative outcomes.
+The bundled references are a curated offline starting point, not the only or necessarily newest Morpheus resources. When web access is available, consult official sources selectively:
 
-## Running Morpheus
+- [Morpheus Model Repository](https://morpheus.gitlab.io/model/) — search built-in, contributed, and published models for closer structural or biological examples. Check each model's category and provenance rather than treating every contribution as normative. The underlying files and history are available in the [model repository on GitLab](https://gitlab.com/morpheus.lab/model-repo).
+- [Morpheus source code](https://gitlab.com/morpheus.lab/morpheus) — consult for release-specific feature support, XML parsing, plugin behavior, and runtime semantics when models or documentation are ambiguous.
 
-Typical commands:
+Match external material to the installed Morpheus version. This skill uses MorpheusML v4 as its default authoring baseline, but older models remain relevant because Morpheus automatically ports MorpheusML versions below 5 to v5 when it loads them.
+
+### Tool Selection
+
+When Morpheus MCP tools are available, use them as the primary interface:
+
+- Discover and read references with `list_references(...)` and `read_reference(...)`.
+- Read supplied paper text or artifacts with the available paper and file readers.
+- Identify relevant paper figures from a visual manifest, captions, or text, then render only the pages needed to recover the target phenotype or geometry.
+- Write generated XML with `write_model_xml(...)`.
+- Run with `run_morpheus_model(...)`; review with `summarize_morpheus_run(...)`, `sample_output_images(...)`, and `evaluate_technical_run(...)` as appropriate.
+- Inspect returned images with an image-capable tool and logs, CSV files, or manifests with `read_file_text(...)`.
+
+Use direct filesystem or CLI operations when MCP is unavailable, lacks the needed operation, or the user explicitly requests CLI commands.
+
+### CLI Fallback
+
+Verify the executable with `morpheus --help`, then run:
 
 ```bash
 morpheus -f model.xml
-morpheus -f model.xml --outdir out/ --num-threads 1
+morpheus -f model.xml -o out/
 ```
 
-Windows often needs the full executable path:
-
-```powershell
-"C:\Program Files\Morpheus\morpheus.exe" -f model.xml
-```
-
-Useful outputs:
-
-- `model_graph.dot` confirms the XML parsed.
-- `plot-*.png` shows generated visualizations.
-- `logger.csv` contains logged time-series data.
+Relevant flags are `-f` for the model file, `-o` for the output directory, and `-j` for threads. Expected artifacts may include `model_graph.dot`, `plot-N_NNNNN.png`, and `logger.csv`. A clean run reaches `StopTime`; artifact presence must match the configured `Analysis` outputs.
 
 ## Troubleshooting
 
-- Unknown tag: search `references/morpheusml-doc.md` and compare with a nearby working example.
-- Symbol not found: list definitions and usages, then fix the mismatch.
-- Missing output files: inspect `Analysis` first.
-- Parser crash or hang: reduce lattice size, stop time, and optional analysis frequency.
-- Wrong qualitative behavior: compare initial conditions, boundary conditions, diffusion rates, adhesion values, and temperatures against the closest example.
+Diagnose the first concrete failure before changing the model.
 
-## Output Expectations
+| Symptom | Check first | Minimal response |
+| --- | --- | --- |
+| Unknown tag or attribute | Exact spelling and nesting in a compatible model or MorpheusML docs | Replace only the unsupported construct |
+| Symbol not found | Definitions and every `symbol-ref` | Repair the mismatched reference |
+| Cell type not found | `Contact` names against `CellType name` values | Make names identical |
+| Cannot parse value | Expected type and expression syntax in the docs | Correct the value, not surrounding structure |
+| No PNG or CSV | Configured `Gnuplotter` or `Logger` outputs | Add only the output the task requires |
+| Timeout or hang | Lattice size, `StopTime`, and output frequency | Reduce the smallest dominant workload factor |
+| Segmentation fault | Lattice, boundaries, initialization, and malformed structures | Compare the failing section with a working reference |
+| Valid run, wrong behavior | Initial conditions, boundaries, parameter scale, and source assumptions | Change one evidence-backed cause and rerun |
 
-- Return minimal, valid MorpheusML instead of speculative XML.
-- When you base a model on a bundled example, name the example you adapted.
-- When the task depends on execution, inspect stdout, stderr, and output files before concluding the run succeeded.
+For CPM outputs, inspect cell boundaries, fragmentation, sorting, and motion. For PDE outputs, inspect expected gradients, spots, stripes, waves, or steady states. Treat all-black, all-white, or static frames as evidence to inspect visualization bounds and model dynamics, not as proof of a specific cause.
