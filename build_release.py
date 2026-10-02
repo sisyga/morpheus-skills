@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build a Morpheus skill release.
 
-The default release is lean: it converts the tracked reference documents to Markdown
-and merges each tracked XML category into one Markdown reference. Pass ``--model-repo``
+The default release is lean: it copies the tracked Markdown reference documents and
+merges each tracked XML category into one Markdown reference. Pass ``--model-repo``
 to additionally package a searchable, pinned snapshot of the public Morpheus model
 repository for offline use.
 
@@ -52,11 +52,6 @@ CATEGORIES = {
     "ODE": "Ordinary Differential Equation (ODE) Examples",
     "Multiscale": "Multiscale Model Examples",
     "Miscellaneous": "Miscellaneous Examples",
-}
-
-TXT_TO_MD = {
-    "model_template.txt": "model-template.md",
-    "morpheusml_doc.txt": "morpheusml-doc.md",
 }
 
 TEXT_EXTENSIONS = {
@@ -185,40 +180,6 @@ def merge_category_to_markdown(category: str, title: str) -> str | None:
         )
 
     return "\n".join(parts)
-
-
-def morpheusml_doc_to_markdown(text: str) -> str:
-    """Prefix the MorpheusML tag reference with a title and a table of contents."""
-    sections = sorted(
-        {match.group(1).strip() for match in re.finditer(r"^# (.+?)(?: \{#.*\})?$", text, re.M)},
-        key=str.lower,
-    )
-    header = [
-        "# MorpheusML Reference\n",
-        "Tag, plugin, and concept documentation for MorpheusML. Each entry is a "
-        "top-level `# <Name>` section; subsections such as `## Detailed Description` "
-        "and `## Example` repeat under every entry.\n",
-        "## Contents\n",
-        "Jump to an entry instead of reading the whole file:\n",
-        '`grep -n "^# Gnuplotter" references/morpheusml-doc.md`\n',
-        ", ".join(sections) + "\n",
-        "---\n",
-    ]
-    return "\n".join(header) + "\n" + text
-
-
-def model_template_to_markdown(text: str) -> str:
-    """Wrap the raw XML model template in a titled Markdown code block."""
-    return "\n".join(
-        [
-            "# MorpheusML Model Template\n",
-            "Minimal MorpheusML v4 skeleton with the required `Description`, `Space`, "
-            "`Time`, and `Analysis` sections. Adapt a close example model instead when one exists.\n",
-            "```xml",
-            text.rstrip(),
-            "```\n",
-        ]
-    )
 
 
 def strip_yaml_scalar(value: str) -> str:
@@ -669,23 +630,8 @@ def build() -> None:
         add_local_file(zf, SKILL_DIR / "SKILL.md", "morpheus/SKILL.md")
         add_local_file(zf, SKILL_DIR / "LICENSE.txt", "morpheus/LICENSE.txt")
 
-        for txt_name, md_name in TXT_TO_MD.items():
-            source = SKILL_DIR / "references" / txt_name
-            if not source.is_file():
-                continue
-            arcname = f"morpheus/references/{md_name}"
-            if txt_name == "morpheusml_doc.txt":
-                zf.writestr(
-                    arcname, morpheusml_doc_to_markdown(source.read_text(encoding="utf-8"))
-                )
-                print(f"  {arcname}")
-            elif txt_name == "model_template.txt":
-                zf.writestr(
-                    arcname, model_template_to_markdown(source.read_text(encoding="utf-8"))
-                )
-                print(f"  {arcname}")
-            else:
-                add_local_file(zf, source, arcname)
+        for source in sorted((SKILL_DIR / "references").glob("*.md")):
+            add_local_file(zf, source, f"morpheus/references/{source.name}")
 
         for category, title in CATEGORIES.items():
             markdown = merge_category_to_markdown(category, title)

@@ -1,3 +1,8 @@
+# MorpheusML Model Template
+
+Minimal MorpheusML v4 skeleton with the required `Description`, `Space`, `Time`, and `Analysis` sections. Adapt a close example model instead when one exists.
+
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <MorpheusModel version="4">
     <Description>
@@ -67,3 +72,4 @@
         </Population>
     </CellPopulations>
 </MorpheusModel>
+```

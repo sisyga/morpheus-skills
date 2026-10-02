@@ -121,6 +121,16 @@ by themselves, prove that a new simulation reproduces the requested biological
 behavior. The skill therefore distinguishes structural checks, reduced-scale runtime
 evidence, and full-scale results.
 
+## Version 1.5
+
+Version 1.5 replaces the bundled MorpheusML reference with documentation regenerated
+from the Morpheus 2.4.1 source:
+
+- formulas are included as LaTeX instead of missing images;
+- each entry lists where the element is used in a model and its child elements;
+- eleven elements added in recent Morpheus releases are now documented;
+- leftover Doxygen anchors and links are removed.
+
 ## Version 1.4
 
 Version 1.4 makes the skill easier to navigate and follows Anthropic's current skill
