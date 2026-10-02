@@ -14,3 +14,4 @@ model-repo-main.zip
 *.mpg
 *.webm
 *.wmv
+__pycache__/
