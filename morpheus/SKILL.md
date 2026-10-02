@@ -1,25 +1,19 @@
 ---
 name: morpheus
-description: Use when a task involves authoring, translating, running, validating, or debugging Morpheus/MorpheusML models, including CPM, ODE, PDE, multiscale simulations, and paper reproductions.
+description: Authors, translates, runs, validates, and debugs Morpheus/MorpheusML simulation models (Cellular Potts/CPM, ODE, PDE/reaction-diffusion, and multiscale) using bundled reference models and the MorpheusML tag reference. Use when working with Morpheus XML model files or the morpheus CLI, or when reproducing a published multicellular model in Morpheus.
 license: Apache-2.0
 metadata:
   author: MorpheusAI
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # Morpheus
 
-Morpheus is an open-source modeling and simulation environment for multicellular systems. MorpheusML is its declarative XML language for Cellular Potts (CPM), ODE, PDE, and multiscale biological models in 2D or 3D.
-
-Simulation execution requires a local Morpheus installation. XML authoring does not.
+MorpheusML is the XML model language of the Morpheus multicellular simulator. Running simulations requires a local Morpheus installation; authoring XML does not.
 
 ## Operating Contract
 
-For create, translate, fix, or reproduce tasks, make the required in-scope local changes and run the model by default when Morpheus execution is available. Use observed outputs to iteratively refine the model. For review or diagnosis, inspect the supplied model and artifacts and report findings; do not rewrite or run the model unless the request includes that work.
-
-Preserve supplied papers, reference files, and prior run artifacts. Write generated files only to the requested workspace or run directory. Stop before destructive actions, external writes, or a material expansion beyond the requested model.
-
-Completion means reporting the model path, structural and runtime validation performed, representative output evidence, material assumptions, and any remaining mismatch with the requested behavior. Valid XML alone does not establish successful biological or visual reproduction.
+For create, translate, fix, or reproduce tasks, run the model by default when Morpheus is available and refine it from observed outputs. For review or diagnosis, report findings without rewriting or running the model unless asked. Valid XML alone does not establish successful biological or visual reproduction.
 
 ## Authoring and Validation Workflow
 
@@ -75,7 +69,13 @@ Keep source authority distinct:
 
 ### Bundled References
 
-Load only references relevant to the current decision:
+Load only references relevant to the current decision. Every file except the template is too large to read whole: read its `## Contents` section first, then `grep -n` for the entry you need and read only that section.
+
+```bash
+grep -n "^# Chemotaxis" references/morpheusml-doc.md        # one tag or plugin
+grep -n "^## CellSorting_2D" references/cpm-examples.md     # one example model
+grep -n "<Chemotaxis" references/*-examples.md              # examples that use a construct
+```
 
 - `references/model-template.md` — minimal MorpheusML v4 skeleton
 - `references/morpheusml-doc.md` — tag and attribute reference
@@ -84,6 +84,7 @@ Load only references relevant to the current decision:
 - `references/ode-examples.md` — signaling, cell-cycle, and gene-regulation systems
 - `references/multiscale-examples.md` — coupled CPM, PDE, and ODE models
 - `references/miscellaneous-examples.md` — cellular automata and other models
+- `assets/` — TIFF domain images loaded by the `Crypt` and `ActivatorInhibitor_Domain` examples through `<Domain><Image path="assets/..."/>`. Morpheus resolves this path relative to the directory it is launched from, so when adapting either model, copy the TIFF next to the new model and update the path, or use an absolute path.
 
 ### Official External Sources
 
@@ -92,18 +93,19 @@ The bundled references are a curated offline starting point, not the only or nec
 - [Morpheus Model Repository](https://morpheus.gitlab.io/model/) — search built-in, contributed, and published models for closer structural or biological examples. Check each model's category and provenance rather than treating every contribution as normative. The underlying files and history are available in the [model repository on GitLab](https://gitlab.com/morpheus.lab/model-repo).
 - [Morpheus source code](https://gitlab.com/morpheus.lab/morpheus) — consult for release-specific feature support, XML parsing, plugin behavior, and runtime semantics when models or documentation are ambiguous.
 
-Match external material to the installed Morpheus version. This skill uses MorpheusML v4 as its default authoring baseline, but older models remain relevant because Morpheus automatically ports MorpheusML versions below 5 to v5 when it loads them.
+Match external material to the installed Morpheus version. Models in older MorpheusML versions are valid references, because Morpheus ports them to the current version automatically when it loads them.
 
 ### Tool Selection
 
-When Morpheus MCP tools are available, use them as the primary interface:
+When the Morpheus MCP server is available, use its tools as the primary interface. Tool names below are fully qualified with the server name `morpheus`; if the server is registered under another name, substitute that name.
 
-- Discover and read references with `list_references(...)` and `read_reference(...)`.
-- Read supplied paper text or artifacts with the available paper and file readers.
-- Identify relevant paper figures from a visual manifest, captions, or text, then render only the pages needed to recover the target phenotype or geometry.
-- Write generated XML with `write_model_xml(...)`.
-- Run with `run_morpheus_model(...)`; review with `summarize_morpheus_run(...)`, `sample_output_images(...)`, and `evaluate_technical_run(...)` as appropriate.
-- Inspect returned images with an image-capable tool and logs, CSV files, or manifests with `read_file_text(...)`.
+- Start a run workspace with `morpheus:create_run`.
+- Discover and read references with `morpheus:list_references` and `morpheus:read_reference`.
+- Read supplied papers with `morpheus:extract_paper_text`.
+- Identify relevant figures with `morpheus:list_paper_figures` or `morpheus:list_paper_visuals`, then render only the pages needed to recover the target phenotype or geometry with `morpheus:render_pdf_pages`.
+- Check structure with `morpheus:validate_model_xml`, then write generated XML with `morpheus:write_model_xml`.
+- Run with `morpheus:run_morpheus_model`; review with `morpheus:summarize_morpheus_run`, `morpheus:sample_output_images`, and `morpheus:evaluate_technical_run` as appropriate.
+- Inspect returned images with an image-capable tool and logs, CSV files, or manifests with `morpheus:read_file_text`.
 
 Use direct filesystem or CLI operations when MCP is unavailable, lacks the needed operation, or the user explicitly requests CLI commands.
 

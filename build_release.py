@@ -88,6 +88,8 @@ VIDEO_EXTENSIONS = {
 }
 
 MAX_SUMMARY_CHARS = 320
+# Keeps each table-of-contents entry to roughly one line in the merged example files.
+MAX_CONTENTS_SUMMARY_CHARS = 160
 
 
 @dataclass
@@ -151,9 +153,25 @@ def merge_category_to_markdown(category: str, title: str) -> str | None:
     if not xml_files:
         return None
 
+    arcname = f"references/{category.lower()}-examples.md"
+    contents = []
+    for xml_path in xml_files:
+        metadata = parse_xml_metadata(xml_path)
+        line = f"- `{xml_path.stem}`"
+        summary = metadata["details"] or metadata["title"]
+        if summary:
+            if len(summary) > MAX_CONTENTS_SUMMARY_CHARS:
+                summary = summary[: MAX_CONTENTS_SUMMARY_CHARS - 3].rstrip() + "..."
+            line += f": {summary}"
+        contents.append(line)
+
     parts = [
         f"# {title}\n",
-        f"Reference MorpheusML v4 XML models for {category.lower()} simulations.\n",
+        f"Reference MorpheusML models for {category.lower()} simulations.\n",
+        "## Contents\n",
+        "Each model is a `## <name>` section. Jump to one instead of reading the whole file:\n",
+        f'`grep -n "^## <name>" {arcname}`\n',
+        "\n".join(contents) + "\n",
         "---\n",
     ]
     for xml_path in xml_files:
@@ -167,6 +185,40 @@ def merge_category_to_markdown(category: str, title: str) -> str | None:
         )
 
     return "\n".join(parts)
+
+
+def morpheusml_doc_to_markdown(text: str) -> str:
+    """Prefix the MorpheusML tag reference with a title and a table of contents."""
+    sections = sorted(
+        {match.group(1).strip() for match in re.finditer(r"^# (.+?)(?: \{#.*\})?$", text, re.M)},
+        key=str.lower,
+    )
+    header = [
+        "# MorpheusML Reference\n",
+        "Tag, plugin, and concept documentation for MorpheusML. Each entry is a "
+        "top-level `# <Name>` section; subsections such as `## Detailed Description` "
+        "and `## Example` repeat under every entry.\n",
+        "## Contents\n",
+        "Jump to an entry instead of reading the whole file:\n",
+        '`grep -n "^# Gnuplotter" references/morpheusml-doc.md`\n',
+        ", ".join(sections) + "\n",
+        "---\n",
+    ]
+    return "\n".join(header) + "\n" + text
+
+
+def model_template_to_markdown(text: str) -> str:
+    """Wrap the raw XML model template in a titled Markdown code block."""
+    return "\n".join(
+        [
+            "# MorpheusML Model Template\n",
+            "Minimal MorpheusML v4 skeleton with the required `Description`, `Space`, "
+            "`Time`, and `Analysis` sections. Adapt a close example model instead when one exists.\n",
+            "```xml",
+            text.rstrip(),
+            "```\n",
+        ]
+    )
 
 
 def strip_yaml_scalar(value: str) -> str:
@@ -619,8 +671,21 @@ def build() -> None:
 
         for txt_name, md_name in TXT_TO_MD.items():
             source = SKILL_DIR / "references" / txt_name
-            if source.is_file():
-                add_local_file(zf, source, f"morpheus/references/{md_name}")
+            if not source.is_file():
+                continue
+            arcname = f"morpheus/references/{md_name}"
+            if txt_name == "morpheusml_doc.txt":
+                zf.writestr(
+                    arcname, morpheusml_doc_to_markdown(source.read_text(encoding="utf-8"))
+                )
+                print(f"  {arcname}")
+            elif txt_name == "model_template.txt":
+                zf.writestr(
+                    arcname, model_template_to_markdown(source.read_text(encoding="utf-8"))
+                )
+                print(f"  {arcname}")
+            else:
+                add_local_file(zf, source, arcname)
 
         for category, title in CATEGORIES.items():
             markdown = merge_category_to_markdown(category, title)

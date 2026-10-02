@@ -121,6 +121,17 @@ by themselves, prove that a new simulation reproduces the requested biological
 behavior. The skill therefore distinguishes structural checks, reduced-scale runtime
 evidence, and full-scale results.
 
+## Version 1.4
+
+Version 1.4 makes the skill easier to navigate and follows Anthropic's current skill
+authoring guidelines:
+
+- each bundled reference file starts with a table of contents and search hints, so
+  agents can read single entries instead of whole files;
+- Morpheus MCP tools are referenced by fully qualified name;
+- the skill description states what the skill does and when to use it;
+- the TIFF domain images used by two examples are documented.
+
 ## Version 1.3
 
 Version 1.3 adds stronger guidance for:
