@@ -4,7 +4,7 @@ description: Authors, translates, runs, validates, and debugs Morpheus/MorpheusM
 license: Apache-2.0
 metadata:
   author: MorpheusAI
-  version: "1.5.0"
+  version: "1.5.1"
 ---
 
 # Morpheus
@@ -111,14 +111,13 @@ Use direct filesystem or CLI operations when MCP is unavailable, lacks the neede
 
 ### CLI Fallback
 
-Verify the executable with `morpheus --help`, then run:
+Verify the executable with `morpheus --help`, then run each attempt with an explicit model file and a fresh output directory:
 
 ```bash
-morpheus -f model.xml
-morpheus -f model.xml -o out/
+morpheus -f model.xml --outdir attempts/attempt_001/
 ```
 
-Relevant flags are `-f` for the model file, `-o` for the output directory, and `-j` for threads. Expected artifacts may include `model_graph.dot`, `plot-N_NNNNN.png`, and `logger.csv`. A clean run reaches `StopTime`; artifact presence must match the configured `Analysis` outputs.
+Always pass both `-f` and `--outdir`; wrapped environments reject runs without them. Use `--num-threads N` for threads and `--seed N` to fix the random seed. Expected artifacts may include `model_graph.dot`, `plot-N_NNNNN.png`, and `logger.csv`. A clean run reaches `StopTime`; artifact presence must match the configured `Analysis` outputs.
 
 ## Troubleshooting
 
@@ -132,6 +131,7 @@ Diagnose the first concrete failure before changing the model.
 | Cannot parse value | Expected type and expression syntax in the docs | Correct the value, not surrounding structure |
 | No PNG or CSV | Configured `Gnuplotter` or `Logger` outputs | Add only the output the task requires |
 | Timeout or hang | Lattice size, `StopTime`, and output frequency | Reduce the smallest dominant workload factor |
+| Segmentation fault right after "Can't find gnuplot" | Whether `gnuplot` is on `PATH` | Install gnuplot or pass `--gnuplot-path`; do not change the model |
 | Segmentation fault | Lattice, boundaries, initialization, and malformed structures | Compare the failing section with a working reference |
 | Valid run, wrong behavior | Initial conditions, boundaries, parameter scale, and source assumptions | Change one evidence-backed cause and rerun |
 
